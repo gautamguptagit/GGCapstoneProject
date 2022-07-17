@@ -1,0 +1,131 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2.1
+
+orbs:
+  docker: circleci/docker@2.1.2
+
+jobs:
+    Build:
+        docker:
+         # Use the same Docker base as the project
+            - image: python:3.7.3-stretch
+
+        working_directory: ~/repo
+
+        steps:
+            - checkout
+            # Download and cache dependencies
+            - restore_cache:
+                keys:
+                    - v1-dependencies-{{ checksum "requirements.txt" }}
+                    # fallback to using the latest cache if no exact match is found
+                    - v1-dependencies-
+            - run:
+                name: install dependencies
+                command: |
+                    python3 -m venv capstone
+                    . capstone/bin/activate
+                    make install
+            - save_cache:
+                paths:
+                    - ./capstone
+                key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+                # run lint!
+            - run:
+                name: run lint
+                command: |
+                    . capstone/bin/activate
+                    make lint
+
+    Build_Docker_Image:
+        docker:
+            # Use the same Docker base as the project
+            - image: cimg/base:2022.06
+              auth:
+                username: $DOCKER_USERNAME
+                password: $DOCKER_PASS
+        steps:
+            - checkout
+            - setup_remote_docker:
+                version: 20.10.14
+            - run:
+                name: Build and run docker image
+                command: |
+                    #ensure docker is running
+                    docker --version
+                    #build docker image
+                    docker build . --tag capstone
+                    #list docker images
+                    docker images capstone
+                    #run the container
+                    docker run -p 80:5000 capstone
+            - run:
+                name: Push docker image to Hub
+                command: |        
+                    #set path 
+                    dockerpath=dockdockgg/capstone
+                    #login to docker hub
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USERNAME --password-stdin
+                    #tag the image
+                    docker tag capstone $dockerpath
+                    #push the image to hub
+                    docker push $dockerpath
+
+    Deploy_AWS_Kube:
+        docker:
+            - image: cimg/base:2022.06
+        working_directory: ~/repo
+        steps:
+            - checkout
+            - run:
+                name: Install Dependencies for Kube configuration
+                command: |
+                    sudo apt-get update && sudo apt-get upgrade
+
+                    # install AWS CLI at latest version
+                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    unzip awscliv2.zip
+                    sudo ./aws/install
+                    
+                    # Install kubectl
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+                    ls -l /usr/local/bin/kubectl
+                    
+                    # Install eksctl
+                    curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+                    sudo mv /tmp/eksctl /usr/local/bin
+                    ls -l /usr/local/bin/eksctl
+            - run:
+                name: Build AWS Kubernetes cluster
+                command: |
+                    export TERM=xterm
+                    aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                    aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+                    aws configure set default.region $AWS_DEFAULT_REGION
+                    nohup aws cloudformation list-exports > output.txt
+                    chmod 755 aws_kube_infra.sh
+                    ./aws_kube_infra.sh
+            - run:
+                name: Deploy onto Kube cluster
+                command: |
+                    #kubectl --kubeconfig /home/circleci/.kube/config get nodes
+                    kubectl get nodes
+                    # Deploy an App from the Dockerhub to the Kubernetes Cluster
+                    kubectl create deploy capstone --image=dockdockgg/capstone:latest
+                    # See the status
+                    #kubectl --kubeconfig /home/circleci/.kube/config get deploy,rs,svc,pods
+                    kubectl get deploy,rs,svc,pods
+
+workflows:
+    default:
+        jobs:
+            - Build
+            - Build_Docker_Image:
+                requires: [ Build ]
+            - Deploy_AWS_Kube:
+                requires: [ Build_Docker_Image ]
