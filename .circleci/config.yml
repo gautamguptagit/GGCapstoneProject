@@ -64,7 +64,7 @@ jobs:
                     #run the container
                     docker run -p 80:5000 capstone
             - run:
-                name: Push docker image to Hub
+                name: Push docker image to  Hub
                 command: |        
                     #set path 
                     dockerpath=dockdockgg/capstone
