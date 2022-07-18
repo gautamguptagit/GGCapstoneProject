@@ -110,6 +110,8 @@ jobs:
                     nohup aws cloudformation list-exports > output.txt
                     chmod 755 aws_kube_infra.sh
                     ./aws_kube_infra.sh
+                    cat output.txt
+                    
             - run:
                 name: Deploy onto Kube cluster
                 command: |
