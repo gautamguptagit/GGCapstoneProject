@@ -1,4 +1,4 @@
-## The Makefile includes instructions on environment setup and lint tests
+##  Makefile 
 
 
 setup:

@@ -1,8 +1,8 @@
-count=$(grep -i eksctl-capstone output.txt | wc -l)
-if [[ $count -gt 0 ]]
+occurance=$(grep -i eksctl-capstone output.txt | wc -l)
+if [[ $occurance -gt 0 ]]
     then 
-    echo "Skipping Cluster creation .. Infrastructure Exists"
+    echo "Since Infra is already existing hence not creating Clstr"
     else
-    echo "Creating AWS Kubernetes cluster"
-    eksctl create cluster --name capstone-udacity --version 1.19 --region $AWS_DEFAULT_REGION --nodegroup-name capstone --node-type t3.large --nodes-min 2 --nodes-max 4 --managed
+    echo "creat AWS kube clustr"
+    eksctl create cluster --name gg-capstone-udacity --version 1.21 --region $AWS_DEFAULT_REGION --nodegroup-name capstone --node-type t3.large --nodes-min 2 --nodes-max 3 --managed
 fi
