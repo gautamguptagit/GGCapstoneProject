@@ -27,7 +27,7 @@ jobs:
                     . capstone/bin/activate
                     make lint
 
-    Build_Docker_Image:
+    Build_DockerImage:
         docker:
             
             - image: cimg/base:2022.06
@@ -109,7 +109,7 @@ workflows:
     default:
         jobs:
             - Build
-            - Build_Docker_Image:
+            - Build_DockerImage:
                 requires: [ Build ]
         #    - Deploy_AWS_Kube:
         #       requires: [ Build_Docker_Image ]
