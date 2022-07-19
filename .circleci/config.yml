@@ -131,4 +131,4 @@ workflows:
         #    - Build_Docker_Image:
         #        requires: [ Build ]
         #    - Deploy_AWS_Kube:
-                requires: [ Build_Docker_Image ]
+        #       requires: [ Build_Docker_Image ]
