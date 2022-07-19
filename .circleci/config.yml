@@ -39,26 +39,21 @@ jobs:
             - setup_remote_docker:
                 version: 20.10.14
             - run:
-                name: Build and run docker image
+                name: To built the dockr img and then run it
                 command: |
-                    #ensure docker is running
+                    
                     docker --version
-                    #build docker image
                     docker build . --tag capstone
-                    #list docker images
                     docker images capstone
-                    #run the container
                     docker run -p 80:5000 capstone
+                    
             - run:
-                name: Push docker image to  Hub
+                name: To push the dockr img to dockerhub
                 command: |        
-                    #set path 
+                    
                     dockerpath=dockdockgg/capstone
-                    #login to docker hub
                     echo $DOCKER_PASS | docker login -u $DOCKER_USERNAME --password-stdin
-                    #tag the image
                     docker tag capstone $dockerpath
-                    #push the image to hub
                     docker push $dockerpath
 
     Deploy_AWS_Kube:
