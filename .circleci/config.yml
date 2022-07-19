@@ -56,7 +56,7 @@ jobs:
                     docker tag capstone $dockerpath
                     docker push $dockerpath
 
-    AWS_Kube_Cluster_Deployment:
+    AWS_Kube_Cluster_Built:
         docker:
             - image: cimg/base:2022.06
         working_directory: ~/repo
@@ -89,7 +89,12 @@ jobs:
                     chmod 755 aws_kube_infra.sh
                     ./aws_kube_infra.sh
                     cat output.txt
-                    
+    
+    AWS_Kube_Cluster_Deployment:
+        docker:
+            - image: cimg/base:2022.06
+        working_directory: ~/repo
+        steps:
             - run:
                 name: From DockHub to KubeCluster Deployment
                 command: |
@@ -104,5 +109,7 @@ workflows:
             - Build_Lint_Chk
             - Build_Push_DockerImage:
                 requires: [ Build_Lint_Chk ]
-            - AWS_Kube_Cluster_Deployment:
+            - AWS_Kube_Cluster_Built:
                 requires: [ Build_Push_DockerImage ]
+            - AWS_Kube_Cluster_Deployment:
+                requires: [ AWS_Kube_Cluster_Built ]
